@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { Product, ProductSpecs } from "./types";
-import { getRefurbUrl, getCountryConfig, DEFAULT_COUNTRY } from "./config";
+import { getCategoryRefurbUrl, getCountryConfig, DEFAULT_COUNTRY, DEFAULT_CATEGORY, CATEGORIES } from "./config";
 
 interface RawDimensions {
   dimensionCapacity?: string;
@@ -145,9 +145,12 @@ function parseSpecsFromTitle(title: string, country: string): ProductSpecs {
   };
 }
 
-export async function fetchProducts(country: string = DEFAULT_COUNTRY): Promise<Product[]> {
+export async function fetchProducts(
+  country: string = DEFAULT_COUNTRY,
+  category: string = DEFAULT_CATEGORY
+): Promise<Product[]> {
   const config = getCountryConfig(country);
-  const url = getRefurbUrl(country);
+  const url = getCategoryRefurbUrl(country, category);
   const response = await fetch(url, {
     headers: {
       "User-Agent":
@@ -159,24 +162,39 @@ export async function fetchProducts(country: string = DEFAULT_COUNTRY): Promise<
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch page: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to fetch ${category} page: ${response.status} ${response.statusText}`);
   }
 
   const html = await response.text();
-  return parseProducts(html, country);
+  return parseProducts(html, country, category);
 }
 
-function parseProducts(html: string, country: string): Product[] {
+export async function fetchAllProducts(
+  country: string = DEFAULT_COUNTRY
+): Promise<Product[]> {
+  const results: Product[] = [];
+  for (const cat of CATEGORIES) {
+    try {
+      const products = await fetchProducts(country, cat.id);
+      results.push(...products);
+    } catch (err) {
+      console.error(`[scraper] Failed to fetch ${cat.id} for ${country}:`, (err as Error).message);
+    }
+  }
+  return results;
+}
+
+function parseProducts(html: string, country: string, category: string): Product[] {
   const bootstrap = extractBootstrapData(html);
 
   if (bootstrap && bootstrap.tiles && bootstrap.tiles.length > 0) {
-    return bootstrap.tiles.map((tile) => normalizeTile(tile, country));
+    return bootstrap.tiles.map((tile) => normalizeTile(tile, country, category));
   }
 
-  return parseFromHtml(html, country);
+  return parseFromHtml(html, country, category);
 }
 
-function normalizeTile(tile: RawTile, country: string): Product {
+function normalizeTile(tile: RawTile, country: string, category: string): Product {
   const config = getCountryConfig(country);
   const refurbPrice = parsePrice(tile.price.currentPrice.raw_amount);
   const originalPrice =
@@ -199,16 +217,19 @@ function normalizeTile(tile: RawTile, country: string): Product {
       ? buildSpecsFromDimensions(dims, tile.title, language)
       : parseSpecsFromTitle(tile.title, country);
 
+  const baseUrl = config.baseUrl ?? "https://www.apple.com";
+
   return {
     partNumber: tile.partNumber,
     title: tile.title,
-    url: `https://www.apple.com${tile.productDetailsUrl}`,
+    url: `${baseUrl}${tile.productDetailsUrl}`,
     refurbPrice,
     originalPrice,
     savings,
     savingsPercent,
     currency: tile.price.priceCurrency || config.currency,
     image: tile.image?.sources?.[0]?.srcSet,
+    category,
     specs,
   };
 }
@@ -228,8 +249,9 @@ function parseLocalePrice(text: string, country: string): number {
   return parseFloat(cleaned) || 0;
 }
 
-function parseFromHtml(html: string, country: string): Product[] {
+function parseFromHtml(html: string, country: string, category: string): Product[] {
   const config = getCountryConfig(country);
+  const baseUrl = config.baseUrl ?? "https://www.apple.com";
   const $ = cheerio.load(html);
   const products: Product[] = [];
 
@@ -237,7 +259,7 @@ function parseFromHtml(html: string, country: string): Product[] {
     const li = $(el);
     const titleEl = li.find("h3 a");
     const title = titleEl.text().trim();
-    const url = "https://www.apple.com" + titleEl.attr("href");
+    const url = baseUrl + titleEl.attr("href");
 
     const currentPriceText = li
       .find(".as-price-currentprice, .as-producttile-currentprice")
@@ -271,6 +293,7 @@ function parseFromHtml(html: string, country: string): Product[] {
         savings,
         savingsPercent,
         currency: config.currency,
+        category,
         specs: parseSpecsFromTitle(title, country),
       });
     }

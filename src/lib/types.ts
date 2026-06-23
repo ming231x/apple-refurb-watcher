@@ -18,6 +18,7 @@ export interface Product {
   savingsPercent: number | null;
   currency: string;
   image?: string;
+  category: string;
   specs: ProductSpecs;
 }
 

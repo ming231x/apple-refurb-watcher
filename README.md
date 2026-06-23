@@ -1,128 +1,140 @@
 # Apple Refurb Watcher
 
-A lightweight Next.js dashboard that monitors Apple's Certified Refurbished Mac store across multiple countries. Track new arrivals, removed products, and price changes without relying on any external APIs or API keys.
+自托管仪表板，监控 Apple 官方翻新商店的产品库存变化。支持**中国区**及 9 个其他国家，覆盖 **Mac / iPad / iPhone / Watch / 配件** 五个品类。
 
-## Features
+> 基于 [drajvver/apple-refurb-watcher](https://github.com/drajvver/apple-refurb-watcher)，新增中国区支持和多品类监控。
 
-- **Multi-country support** — Monitor refurbished stores in Poland (default), United States, United Kingdom, Germany, France, Spain, Italy, Canada, and Australia.
-- **Change detection** — Automatically detects and highlights:
-  - **New** products (green badge)
-  - **Removed** products (red section)
-  - **Price changes** (amber badge with previous price)
-- **Smart filtering** — Filter by Model, Screen size, Chip, Memory, Storage, and Color using clickable tags.
-- **No API keys** — Scrapes data directly from Apple's public storefront. No registration or API keys required.
-- **Docker support** — Run locally with a single `docker run` command.
-- **GitHub Container Registry** — Pre-built images published automatically on release tags.
-- **Bunny.net Magic Containers** — Automatic rolling deployments to Bunny.net's serverless container platform on every release.
+## 功能
 
-## Quick Start
+- 🌍 **10 个国家** — 中国（默认）、波兰、美国、英国、德国、法国、西班牙、意大利、加拿大、澳大利亚
+- 📦 **5 个品类** — Mac、iPad、iPhone、Watch、配件
+- 🟢 **新品上架** — 绿色标记新出现的产品
+- 🔴 **已下架** — 红色标记不再可用的产品
+- 🟡 **价格变动** — 黄色标记价格变化，显示原价
+- 🏷️ **智能筛选** — 按品类、型号、屏幕尺寸、芯片、内存、存储、颜色筛选
+- ⏱️ **自动刷新** — 可配置 15 分钟到 6 小时的自动抓取间隔
+- 🌙 **深色模式** — 自动适应系统主题
+- 💰 **含税/不含税** — 一键切换价格显示方式（中国区增值税 13%）
+- 🐳 **Docker 支持** — 一条命令即可部署
 
-### Docker (recommended)
+## 快速开始
 
-```bash
-docker run -d \
-  -p 3000:3000 \
-  -v refurb-data:/app/data \
-  --name refurb-watcher \
-  ghcr.io/YOUR_USERNAME/apple-refurb-watcher:latest
-```
+### 方式一：开发模式（WSL / Linux / macOS）
 
-Then open [http://localhost:3000](http://localhost:3000).
-
-> Replace `YOUR_USERNAME` with your GitHub username or build the image locally (see below).
-
-### Local Development
+要求 Node.js >= 20.9
 
 ```bash
-# Install dependencies
 npm install
-
-# Run the dev server
 npm run dev
-
-# Open http://localhost:3000
 ```
 
-To fetch data, click the **Refresh** button in the UI.
+浏览器打开 `http://localhost:3000`。
 
-## Building the Docker Image
+### 方式二：Docker
 
 ```bash
 docker build -t apple-refurb-watcher .
-docker run -d -p 3000:3000 -v refurb-data:/app/data apple-refurb-watcher
+docker run -d --name apple-watcher -p 3000:3000 -v apple-data:/app/data apple-refurb-watcher
 ```
 
-## Deploy to Bunny.net Magic Containers
-
-This repository includes a GitHub Action that automatically deploys to [Bunny.net Magic Containers](https://bunny.net/magic-containers/) after a successful release build.
-
-### Prerequisites
-
-1. Create an application on [Bunny.net Magic Containers](https://bunny.net/magic-containers/).
-2. Configure the container image to pull from `ghcr.io/YOUR_USERNAME/apple-refurb-watcher`.
-3. Add the following to your GitHub repository (**Settings → Secrets and variables → Actions**):
-
-| Type | Name | Value |
-|------|------|-------|
-| Variable | `BUNNYNET_APP_ID` | Your Bunny.net Magic Containers App ID |
-| Secret | `BUNNYNET_API_KEY` | Your Bunny account API key |
-
-### How it works
-
-When you publish a release (or push a `v*` tag), the workflow:
-1. Builds and publishes the Docker image to GHCR
-2. Automatically triggers a rolling update on Bunny.net Magic Containers
-
-No manual deployment steps are required after the initial setup.
-
-## How It Works
-
-1. The app fetches Apple's refurbished Mac category page for the selected country.
-2. It extracts structured product data from the page's embedded JSON (with a Cheerio-based HTML fallback).
-3. Products are compared against the locally stored state to detect changes.
-4. Changes and the current catalog are saved to `data/state-<country>.json`.
-5. The dashboard displays the current catalog with change highlights and interactive filters.
-
-## Tech Stack
-
-- [Next.js 16.2](https://nextjs.org/) (App Router, Turbopack)
-- [React 19.2](https://react.dev/)
-- [TypeScript 6.0](https://www.typescriptlang.org/)
-- [Tailwind CSS v4](https://tailwindcss.com/)
-- [Cheerio](https://cheerio.js.org/) (HTML fallback parsing)
-
-## Supported Countries
-
-| Country | Code | Currency |
-|---------|------|----------|
-| Poland | `pl` | PLN |
-| United States | `us` | USD |
-| United Kingdom | `uk` | GBP |
-| Germany | `de` | EUR |
-| France | `fr` | EUR |
-| Spain | `es` | EUR |
-| Italy | `it` | EUR |
-| Canada | `ca` | CAD |
-| Australia | `au` | AUD |
-
-## Publishing a Release
-
-Push a semver tag to trigger the GitHub Action that builds and publishes the Docker image to GHCR:
+### 方式三：Windows + WSL
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+# 进入 WSL
+wsl
+
+# 安装 Node.js 22.x
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt install -y nodejs
+
+# 启动
+cd /mnt/d/projects/apple-refurb-watcher
+npm install
+npm run dev
 ```
 
-Or create a release via the GitHub UI.
+## 使用说明
 
-## Data Storage
+1. 打开 `http://localhost:3000`，默认显示**中国区全部品类**翻新产品
+2. 选择**地区**和**品类**，点击 **Refresh** 抓取数据
+3. 首次运行建立基线（不触发变动通知），后续抓取开始检测变化
+4. 开启 **Auto** 并选择间隔时间，即可后台自动监控
+5. 使用品类下拉框和规格标签快速筛选目标产品
 
-The app stores state locally in JSON files inside the `data/` directory (or `/app/data` in Docker). No external database is required.
+## 支持的地区
 
-## Disclaimer
+| 地区 | 代码 | 货币 | 域名 |
+|------|------|------|------|
+| 中国 | `cn` | CNY (¥) | apple.com.cn |
+| 波兰 | `pl` | PLN | apple.com |
+| 美国 | `us` | USD | apple.com |
+| 英国 | `uk` | GBP | apple.com |
+| 德国 | `de` | EUR | apple.com |
+| 法国 | `fr` | EUR | apple.com |
+| 西班牙 | `es` | EUR | apple.com |
+| 意大利 | `it` | EUR | apple.com |
+| 加拿大 | `ca` | CAD | apple.com |
+| 澳大利亚 | `au` | AUD | apple.com |
 
-This project is an unofficial tool and is not affiliated with, endorsed by, or sponsored by Apple Inc. It simply scrapes publicly available information from Apple's certified refurbished store pages. Use at your own risk and please respect Apple's [Terms of Service](https://www.apple.com/legal/internet-services/terms/site.html).
+## 支持的品类
+
+| 品类 | URL 路径 |
+|------|----------|
+| Mac | `/shop/refurbished/mac` |
+| iPad | `/shop/refurbished/ipad` |
+| iPhone | `/shop/refurbished/iphone` |
+| Watch | `/shop/refurbished/watch` |
+| 配件 | `/shop/refurbished/accessories` |
+
+## 项目结构
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── refresh/route.ts    # 手动刷新 API
+│   │   └── settings/route.ts   # 自动刷新设置 API
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx                # 主页面（服务端组件）
+├── components/
+│   ├── Dashboard.tsx           # 仪表板 UI
+│   └── ThemeToggle.tsx         # 暗色模式切换
+└── lib/
+    ├── config.ts               # 地区 & 品类配置
+    ├── types.ts                # TypeScript 类型定义
+    ├── scraper.ts              # Apple 商店抓取（JSON + Cheerio 双策略）
+    ├── watcher.ts              # 变动检测 & 状态持久化
+    ├── scheduler.ts            # 后台自动刷新调度
+    └── settings.ts             # 设置读写
+```
+
+## 抓取原理
+
+1. 请求 Apple 翻新商店页面（带 Chrome UA 和对应地区的 Accept-Language）
+2. 优先从页面嵌入式 JSON（`window.REFURB_GRID_BOOTSTRAP`）提取结构化产品数据
+3. 如 JSON 不可用，回退到 Cheerio DOM 解析
+4. 通过零件编号（part number）对比新旧快照，检测新增、下架、价格变动
+5. 状态持久化到 `data/state-{country}.json`，无需外部数据库
+
+## 数据存储
+
+所有数据保存在 `data/` 目录（Docker 中为 `/app/data`）的 JSON 文件中：
+
+- `state-{country}.json` — 每个国家的产品快照和变动记录
+- `settings.json` — 自动刷新配置
+
+## 技术栈
+
+- [Next.js 16](https://nextjs.org/) (App Router / Turbopack)
+- [React 19](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS v4](https://tailwindcss.com/)
+- [Cheerio](https://cheerio.js.org/)（HTML 回退解析）
+
+## 免责声明
+
+本项目是**非官方工具**，与 Apple Inc. 无任何关联。所有数据来自 Apple 公开页面，仅供个人学习研究使用。请遵守 Apple [服务条款](https://www.apple.com/legal/internet-services/terms/site.html)。
 
 ## License
 

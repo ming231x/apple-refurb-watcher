@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchProducts } from "@/lib/scraper";
+import { fetchAllProducts } from "@/lib/scraper";
 import { fetchAndDetectChanges } from "@/lib/watcher";
 import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/config";
 
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await fetchAndDetectChanges(
-      () => fetchProducts(country),
+      () => fetchAllProducts(country),
       country
     );
     return NextResponse.json({

@@ -1,6 +1,6 @@
 import { loadSettings } from "./settings";
 import { loadState, fetchAndDetectChanges } from "./watcher";
-import { fetchProducts } from "./scraper";
+import { fetchAllProducts } from "./scraper";
 import { COUNTRIES } from "./config";
 
 let schedulerStarted = false;
@@ -28,7 +28,7 @@ export function startScheduler(): void {
 
       if (now - lastFetch >= intervalMs) {
         try {
-          await fetchAndDetectChanges(() => fetchProducts(country), country);
+          await fetchAndDetectChanges(() => fetchAllProducts(country), country);
           console.log(`[scheduler] Auto-refreshed ${country}`);
         } catch (err) {
           console.error(

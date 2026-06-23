@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import type { Product, ProductSpecs, WatcherChange } from "@/lib/types";
-import { COUNTRIES, DEFAULT_COUNTRY, getCountryConfig } from "@/lib/config";
+import { COUNTRIES, DEFAULT_COUNTRY, getCountryConfig, getCategoryRefurbUrl, CATEGORIES } from "@/lib/config";
 import ThemeToggle from "@/components/ThemeToggle";
 
 interface CountryState {
@@ -17,6 +17,7 @@ interface DashboardProps {
 }
 
 type FilterTab = "all" | "new" | "changed";
+type CategoryFilter = "all" | string;
 
 type SpecKey = keyof Pick<
   ProductSpecs,
@@ -76,6 +77,7 @@ function getProductImageUrl(product: Product): string | null {
 
 export default function Dashboard({ initialState }: DashboardProps) {
   const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRY);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("all");
   const [dataByCountry, setDataByCountry] = useState<
     Record<string, CountryState>
   >({
@@ -142,6 +144,7 @@ export default function Dashboard({ initialState }: DashboardProps) {
     }
     setActiveFilter("all");
     setSelectedTags({});
+    setSelectedCategory("all");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry]);
 
@@ -284,6 +287,12 @@ export default function Dashboard({ initialState }: DashboardProps) {
     );
   }
 
+  if (selectedCategory !== "all") {
+    filteredProducts = filteredProducts.filter(
+      (p) => p.category === selectedCategory
+    );
+  }
+
   if (activeTagCount > 0) {
     filteredProducts = filteredProducts.filter((p) => {
       for (const [key, values] of Object.entries(selectedTags)) {
@@ -343,6 +352,20 @@ export default function Dashboard({ initialState }: DashboardProps) {
                 {COUNTRIES.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                disabled={isRefreshing}
+                className="text-sm border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-900 dark:focus:ring-stone-100 focus:border-transparent disabled:opacity-50"
+              >
+                <option value="all">All Categories</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
                   </option>
                 ))}
               </select>
@@ -613,7 +636,7 @@ export default function Dashboard({ initialState }: DashboardProps) {
         <p className="text-center text-xs text-stone-400 dark:text-stone-500">
           Apple Refurb Watcher &middot; Data from{" "}
           <a
-            href={`https://www.apple.com/${countryConfig.urlPath}/shop/refurbished/mac`}
+            href={getCategoryRefurbUrl(selectedCountry, selectedCategory !== "all" ? selectedCategory : "mac")}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:underline"
@@ -700,6 +723,12 @@ function ProductCard({
         <h3 className="font-semibold text-stone-900 dark:text-stone-100 text-sm leading-snug mb-2 line-clamp-2">
           {specs.model || product.title}
         </h3>
+
+        <div className="flex flex-wrap gap-1 mb-2">
+          <span className="inline-block text-[10px] px-1.5 py-0.5 rounded font-medium bg-stone-200 dark:bg-stone-700 text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+            {CATEGORIES.find((c) => c.id === product.category)?.name ?? product.category}
+          </span>
+        </div>
 
         <div className="flex flex-wrap gap-1 mb-4">
           {(

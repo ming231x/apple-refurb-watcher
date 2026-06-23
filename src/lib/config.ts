@@ -4,6 +4,8 @@ export interface CountryConfig {
   code: string;
   name: string;
   urlPath: string;
+  /** Override the base URL for stores on different domains (e.g. apple.com.cn). */
+  baseUrl?: string;
   locale: string;
   currency: string;
   language: string;
@@ -14,6 +16,7 @@ export interface CountryConfig {
 }
 
 export const COUNTRIES: CountryConfig[] = [
+  { code: "cn", name: "China", urlPath: "cn", baseUrl: "https://www.apple.com.cn", locale: "zh-CN", currency: "CNY", language: "zh", thousandSeparator: ",", decimalSeparator: ".", vatRate: 13 },
   { code: "pl", name: "Poland", urlPath: "pl", locale: "pl-PL", currency: "PLN", language: "pl", thousandSeparator: ".", decimalSeparator: ",", vatRate: 23 },
   { code: "us", name: "United States", urlPath: "us", locale: "en-US", currency: "USD", language: "en", thousandSeparator: ",", decimalSeparator: ".", vatRate: null },
   { code: "uk", name: "United Kingdom", urlPath: "uk", locale: "en-GB", currency: "GBP", language: "en", thousandSeparator: ",", decimalSeparator: ".", vatRate: 20 },
@@ -25,15 +28,34 @@ export const COUNTRIES: CountryConfig[] = [
   { code: "au", name: "Australia", urlPath: "au", locale: "en-AU", currency: "AUD", language: "en", thousandSeparator: ",", decimalSeparator: ".", vatRate: 10 },
 ];
 
-export const DEFAULT_COUNTRY = "pl";
+export const DEFAULT_COUNTRY = "cn";
 
 export function getCountryConfig(code: string): CountryConfig {
   return COUNTRIES.find((c) => c.code === code) ?? COUNTRIES[0];
 }
 
-export function getRefurbUrl(country: string): string {
+export interface CategoryConfig {
+  id: string;
+  name: string;
+  /** URL path segment for this category on the refurbished store. */
+  urlSegment: string;
+}
+
+export const CATEGORIES: CategoryConfig[] = [
+  { id: "mac", name: "Mac", urlSegment: "mac" },
+  { id: "ipad", name: "iPad", urlSegment: "ipad" },
+  { id: "iphone", name: "iPhone", urlSegment: "iphone" },
+  { id: "watch", name: "Watch", urlSegment: "watch" },
+  { id: "accessories", name: "Accessories", urlSegment: "accessories" },
+];
+
+export const DEFAULT_CATEGORY = "mac";
+
+export function getCategoryRefurbUrl(country: string, category: string): string {
   const config = getCountryConfig(country);
-  return `https://www.apple.com/${config.urlPath}/shop/refurbished/mac`;
+  const cat = CATEGORIES.find((c) => c.id === category) ?? CATEGORIES[0];
+  const base = config.baseUrl ?? "https://www.apple.com";
+  return `${base}/${config.urlPath}/shop/refurbished/${cat.urlSegment}`;
 }
 
 export const DATA_DIR = path.join(process.cwd(), "data");

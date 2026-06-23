@@ -3,3 +3,6 @@ node_modules/
 out/
 data/
 dist/
+apt
+curl
+tsconfig.tsbuildinfo
