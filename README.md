@@ -1,4 +1,4 @@
-# Apple Refurb Watcher
+# Apple Refurb Watcher(翻新产品库存查询)
 
 自托管仪表板，监控 Apple 官方翻新商店的产品库存变化。支持**中国区**及 9 个其他国家，覆盖 **Mac / iPad / iPhone / Watch / 配件** 五个品类。
 
